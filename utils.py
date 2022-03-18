@@ -27,8 +27,8 @@ class SNR:
             max_snr: float,
             ) -> None:
         self.sample_rate = sample_rate
-        self.win_length = sample_rate / win_length
-        self.hop_length = sample_rate / hop_length
+        self.win_length = sample_rate // win_length
+        self.hop_length = sample_rate // hop_length
         self.min_snr = min_snr
         self.max_snr = max_snr
         self.spec = Spectrogram(
