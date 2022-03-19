@@ -10,6 +10,7 @@ def download_audio(save_to: str, url: str):
     with open(save_to, 'wb') as f:
         f.write(content)
 
+
 def request_page(url: str, page: int):
     try:
         return requests.get(
@@ -20,6 +21,7 @@ def request_page(url: str, page: int):
         )
     except:
         return None
+
 
 def crawl_voices(save_to):
     # The voice assistant page because it does not contain too much music in the background 
@@ -49,6 +51,7 @@ def crawl_voices(save_to):
         counter += 1
         print(f'total found audios is {total}')
 
+
 def crawl_bunny_studio(save_to: str):
     base_url = 'https://bunnystudio.com/voice/search/'
     if not os.path.exists(save_to):
@@ -76,4 +79,4 @@ def crawl_bunny_studio(save_to: str):
 
 if __name__ == '__main__':
     crawl_voices('data')
-    crawl_bunny_studio('bunny')
+    crawl_bunny_studio('data')
