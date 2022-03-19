@@ -1,5 +1,7 @@
+from ctypes import Union
 import torch
 from torch import Tensor
+from dataclasses import dataclass
 from torchaudio.transforms import Spectrogram
 
 
@@ -15,6 +17,12 @@ def power_to_db_scale(x: Tensor) -> Tensor:
         Tensor: dB scaled tensor
     """
     return 10 * torch.log10(x)
+
+
+@dataclass
+class MinMax:
+    min_val: Union[float, int]
+    max_val: Union[float, int]
 
 
 class SNR:
