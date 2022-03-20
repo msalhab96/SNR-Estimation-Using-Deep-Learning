@@ -1,0 +1,24 @@
+device: 'cuda'
+
+dist_configs:
+  use_dist: true
+  n_gpus: 2
+  backend: 'nccl'
+  url: 'tcp://localhost:56789'
+
+data:
+  training_dir: 'train_data/'
+  testing_dir: 'test_data/'
+
+training:
+  batch_size: 16 
+  optimizer: 'adam' # adam, sgd
+  learning_rate: 1e-3
+  epochs: 100
+  checkpoints_dir: 'checkpoints'
+
+model:
+  inp_size: 40
+  num_layers: 3
+  hidden_size: 128
+  is_causal: false
