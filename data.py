@@ -34,9 +34,21 @@ class AudioPipeline(IPipeline):
 
 
 class NoisedAudPipeline(IPipeline):
-    def __init__(self) -> None:
+    def __init__(
+            self,
+            sample_rate: int,
+            n_mfcc: int,
+            melkwargs: dict
+            ) -> None:
         super().__init__()
-        # TODO
+        self.mfcc = torchaudio.transforms.MFCC(
+            sample_rate=sample_rate,
+            n_mfcc=n_mfcc,
+            melkwargs=melkwargs
+            )
+
+    def run(self, joint_signal: Tensor) -> Tensor:
+        return self.mfcc(joint_signal)
 
 
 class dataset(Dataset):
@@ -109,7 +121,8 @@ class dataset(Dataset):
         elif noise_length < signal_length:
             diff = signal_length - noise_length
             start_idx = random.randrange(0, diff)
-            noise_signal[:, start_idx:] += noise
+            noise_signal += 1e-6
+            noise_signal[:, start_idx: start_idx + noise_length] += noise
             return (signal + noise_signal), noise_signal
         else:
             diff = noise_length - signal_length
@@ -126,8 +139,14 @@ class dataset(Dataset):
         signal *= signal_scaler
         noisy_signal, noise = self.pick_noisy_chunk(signal, noise)
         snr = self.snr_calc(signal, noise)
-        # TODO: Padd the results
-        return self.noisy_pipeline(noisy_signal), snr
+        result = self.noisy_pipeline.run(noisy_signal)
+        length = result.shape[-1]
+        if (self.chunk_length.max_val - length) != 0:
+            zeros = torch.zeros(
+                *result.shape[:2], self.chunk_length.max_val - result.shape[-1]
+                )
+            result = torch.cat([result, zeros], dim=-1)
+        return result, snr, length
 
     def __len__(self):
         return len(self.audio_files)
