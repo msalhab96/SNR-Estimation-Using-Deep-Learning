@@ -4,7 +4,7 @@ from typing import Callable, Tuple
 import torch
 from torch import Tensor
 import torchaudio
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from abc import ABC, abstractmethod
 from utils import MinMax
 
@@ -146,7 +146,20 @@ class dataset(Dataset):
                 *result.shape[:2], self.chunk_length.max_val - result.shape[-1]
                 )
             result = torch.cat([result, zeros], dim=-1)
-        return result, snr, length
+        snr_len_diff = self.chunk_length.max_val - snr.shape[1]
+        if snr_len_diff != 0:
+            zeros = torch.zeros(1, snr_len_diff)
+            snr = torch.cat([snr, zeros], dim=-1)
+        return result.squeeze(), snr.squeeze(), length
 
     def __len__(self):
         return len(self.audio_files)
+
+def get_data_loader(
+        batch_size: int, 
+        dataset: Dataset
+        ) -> DataLoader:
+    return DataLoader(
+        dataset,
+        batch_size=batch_size
+    )
