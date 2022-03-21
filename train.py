@@ -136,3 +136,10 @@ class Trainer:
             self.history[self.__train_loss_key].append(total_loss)
         else:
             self.history[self.__train_loss_key] = [total_loss]
+
+def load_model(*args, **kwargs) -> Module:
+    model = Model(**hprams.model)
+    if hprams.checkpoint is not None:
+        model.load_state_dict(torch.load(hprams.checkpoint))
+    return model
+
