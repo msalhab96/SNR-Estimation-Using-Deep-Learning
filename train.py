@@ -1,11 +1,11 @@
 from data import AudioPipeline, NoisedAudPipeline, dataset, get_data_loader
 from torch.utils.data import DataLoader
-from typing import Callable, Union
+from typing import Callable, Tuple
 from torch.optim import Optimizer
 from torch.nn import Module
 from functools import wraps
 from hprams import hprams
-from utils import MinMax
+from utils import SNR, MinMax
 from model import Model
 from tqdm import tqdm
 import torch
@@ -137,9 +137,118 @@ class Trainer:
         else:
             self.history[self.__train_loss_key] = [total_loss]
 
+
 def load_model(*args, **kwargs) -> Module:
     model = Model(**hprams.model)
     if hprams.checkpoint is not None:
         model.load_state_dict(torch.load(hprams.checkpoint))
     return model
 
+
+def get_melkwargs() -> dict:
+    return {
+        'n_fft': hprams.data.n_fft,
+        'win_length': hprams.data.win_length,
+        'hop_length': hprams.data.hop_length
+    }
+
+
+def get_snr_params() -> dict:
+    return {
+        'sample_rate': hprams.data.sampling_rate,
+        'win_length': hprams.data.win_length,
+        'hop_length': hprams.data.hop_length,
+        'min_snr': hprams.data.min_snr,
+        'max_snr': hprams.data.max_snr
+    }
+
+
+def get_scalers() -> dict:
+    return {
+        'chunk_length': MinMax(
+            hprams.data.lengths.min_val,
+            hprams.data.lengths.max_val
+            ),
+        'signal_scaler': MinMax(
+            hprams.data.signal_scaler.min_val,
+            hprams.data.signal_scaler.max_val
+            ),
+        'noise_scaler': MinMax(
+            hprams.data.noise_scaler.min_val,
+            hprams.data.noise_scaler.max_val
+            )
+    }
+
+
+def get_pipelines() -> dict:
+    return {
+        'aud_pipeline': AudioPipeline(
+            hprams.data.sampling_rate
+            ),
+        'noisy_pipeline': NoisedAudPipeline(
+            sample_rate=hprams.data.sampling_rate,
+            n_mfcc=hprams.data.n_mfcc,
+            melkwargs=get_melkwargs()
+            )
+    }
+
+
+def get_dataset_params(data_dir: str, seed=None) -> dict:
+    return dict(
+        **get_pipelines(),
+        **get_scalers(),
+        snr_calc=SNR(**get_snr_params()),
+        noise_dir=hprams.data.noise_dir,
+        audio_dir=data_dir,
+        seed=seed
+    )
+
+
+def get_train_test_loaders() -> Tuple[DataLoader, DataLoader]:
+    train_loader = get_data_loader(
+        batch_size=hprams.training.batch_size,
+        dataset=dataset(
+            **get_dataset_params(
+                data_dir=hprams.data.training_dir,
+                seed=hprams.data.train_seed
+                )
+            )
+        )
+    test_loader = get_data_loader(
+        batch_size=hprams.training.batch_size,
+        dataset=dataset(
+            **get_dataset_params(
+                data_dir=hprams.data.testing_dir,
+                seed=hprams.data.test_seed
+                )
+            )
+        )
+    return (
+        train_loader,
+        test_loader
+    )
+
+
+def get_trainer() -> Trainer:
+    device = hprams.device
+    criterion = LOSS[hprams.training.loss_func]
+    model = Model(**hprams.model).to(device)
+    optimizer = OPT[hprams.training.optimizer](
+        model.parameters(),
+        lr=hprams.training.learning_rate
+        )
+    train_loader, test_loader = get_train_test_loaders()
+    return Trainer(
+        criterion=criterion,
+        optimizer=optimizer,
+        model=model,
+        device=device,
+        train_loader=train_loader,
+        test_loader=test_loader,
+        epochs=hprams.training.epochs
+    )
+
+
+if __name__ == '__main__':
+    trainer = get_trainer()
+    trainer.fit()
