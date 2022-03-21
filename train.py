@@ -1,4 +1,5 @@
 from data import AudioPipeline, NoisedAudPipeline, dataset, get_data_loader
+from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from typing import Callable, Tuple
 from torch.optim import Optimizer
@@ -53,6 +54,7 @@ class Trainer:
             train_loader: DataLoader,
             test_loader: DataLoader,
             epochs: int,
+            logdir: str
             ) -> None:
         self.criterion = criterion
         self.optimizer = optimizer
@@ -63,15 +65,16 @@ class Trainer:
         self.epochs = epochs
         self.step_history = dict()
         self.history = dict()
+        self.tensorboard = SummaryWriter(logdir)
 
     def fit(self):
         """The main training loop that train the model on the training
         data then test it on the test set and then log the results
         """
-        for _ in range(self.epochs):
+        for epoch in range(self.epochs):
             self.train()
             self.test()
-            self.print_results()
+            self.log_results(epoch)
 
     def set_train_mode(self) -> None:
         """Set the models on the training mood
@@ -83,11 +86,12 @@ class Trainer:
         """
         self.model = self.model.eval()
 
-    def print_results(self):
-        """Prints the results after each epoch
+    def log_results(self, epoch: int):
+        """logs the results after each epoch
         """
         result = ''
         for key, value in self.history.items():
+            self.tensorboard.add_scalar(key, value[-1], epoch)
             result += f'{key}: {str(value[-1])}, '
         print(result[:-2])
 
@@ -245,7 +249,8 @@ def get_trainer() -> Trainer:
         device=device,
         train_loader=train_loader,
         test_loader=test_loader,
-        epochs=hprams.training.epochs
+        epochs=hprams.training.epochs,
+        logdir=hprams.training.logdir
     )
 
 
