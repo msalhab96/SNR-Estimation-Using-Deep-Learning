@@ -52,6 +52,7 @@ class Model(nn.Module):
         Returns:
             Tensor: The estimated SNR
         """
+        lengths = lengths.cpu()
         packed_seq = pack_padded_sequence(
             input=x,
             lengths=lengths,
