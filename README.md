@@ -17,3 +17,6 @@ To train the model follow the steps below:
 2. Change the configuration in the config/configs.yaml file
 3. Run `python train.py` to train from scratch or `python train.py checkpoint=path/to/checkpoint` to train the model from a checkpoint
 4. Run `tensorboard --logdir=logdir/` to monitor the training (optional)
+
+## Pre-trained model
+You can download the pretrained model from [here](https://drive.google.com/file/d/1hUcI2ildONGuwAHqOg2CPl1caLTtKdqL/view?usp=sharing)
