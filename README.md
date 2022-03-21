@@ -13,6 +13,7 @@ This implementation includes distributed training and trained on [LibriSpeech -t
 
 # Training
 To train the model follow the steps below:
-1. preprocess all the audio files and make sure all of them are single channled audios
-2. change the configuration in the config/configs.yaml file
-3. run `python train.py` to train from scratch or `python train.py checkpoint=path/to/checkpoint` to train the model from a checkpoint
+1. Preprocess all the audio files and make sure all of them are single channeled audios
+2. Change the configuration in the config/configs.yaml file
+3. Run `python train.py` to train from scratch or `python train.py checkpoint=path/to/checkpoint` to train the model from a checkpoint
+4. Run `tensorboard --logdir=logdir/` to monitor the training (optional)
