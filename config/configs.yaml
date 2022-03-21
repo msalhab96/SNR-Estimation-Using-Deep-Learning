@@ -3,14 +3,14 @@ checkpoint: null
 
 dist_configs:
   use_dist: true
-  n_gpus: 2
+  n_gpus: 3
   backend: 'nccl'
   url: 'tcp://localhost:56789'
 
 data:
-  training_dir: 'cleaned/'
+  training_dir: 'train/'
   testing_dir: 'test/'
-  noise_dir: 'noise-data/'
+  noise_dir: 'noise/'
   sampling_rate: 16000
   n_mfcc: 40
   win_length: 400
@@ -18,24 +18,23 @@ data:
   hop_length: 200
   max_snr: 30 # in dB
   min_snr: -30
-  test_seed: 42
+  test_seed: null
   train_seed: null
   lengths:
     min_val: 24000 # samples ~1.5 seconds 
-    max_val: 80000 # samples ~5 seconds
+    max_val: 30000 # samples ~2 seconds
   noise_scaler:
     min_val: 0.05
     max_val: 0.7
   signal_scaler:
     min_val: 0.05
-    max_val: 0.5
-
+    max_val: 1
 
 training:
   logdir: 'logs/'
-  batch_size: 16 
+  batch_size: 128 
   optimizer: 'adam' # adam
-  learning_rate: 1e-3
+  learning_rate: 2e-3
   loss_func: 'mae' # mae, mse
   epochs: 100
   checkpoints_dir: 'checkpoints'

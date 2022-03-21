@@ -7,7 +7,8 @@ import torchaudio
 from torch.utils.data import Dataset, DataLoader
 from abc import ABC, abstractmethod
 from utils import MinMax
-
+from torch.nn.parallel import DistributedDataParallel
+from torch.utils.data.distributed import DistributedSampler
 
 class IPipeline(ABC):
     @abstractmethod
@@ -121,7 +122,7 @@ class dataset(Dataset):
         elif noise_length < signal_length:
             diff = signal_length - noise_length
             start_idx = random.randrange(0, diff)
-            noise_signal += 1e-6
+            noise_signal += 1e-3
             noise_signal[:, start_idx: start_idx + noise_length] += noise
             return (signal + noise_signal), noise_signal
         else:
@@ -163,3 +164,21 @@ def get_data_loader(
         dataset,
         batch_size=batch_size
     )
+
+def get_distributed_loader(
+        batch_size: int,
+        world_size: int,
+        rank: int,
+        dataset: Dataset
+        ):
+    sampler = DistributedSampler(
+        dataset, 
+        num_replicas=world_size,
+        rank=rank
+        )
+    return DataLoader(
+        dataset, 
+        batch_size=batch_size, 
+        sampler=sampler, 
+        num_workers=world_size
+        )
