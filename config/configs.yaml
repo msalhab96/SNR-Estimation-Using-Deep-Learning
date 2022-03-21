@@ -1,4 +1,5 @@
 device: 'cuda'
+checkpoint: null
 
 dist_configs:
   use_dist: true
@@ -7,12 +8,32 @@ dist_configs:
   url: 'tcp://localhost:56789'
 
 data:
-  training_dir: 'train_data/'
-  testing_dir: 'test_data/'
+  training_dir: 'cleaned/'
+  testing_dir: 'test/'
+  noise_dir: 'noise-data/'
+  sampling_rate: 16000
+  n_mfcc: 40
+  win_length: 400
+  n_fft: ${data.win_length}
+  hop_length: 200
+  max_snr: 30 # in dB
+  min_snr: -30
+  test_seed: 42
+  train_seed: null
+  lengths:
+    min_val: 24000 # samples ~1.5 seconds 
+    max_val: 80000 # samples ~5 seconds
+  noise_scaler:
+    min_val: 0.05
+    max_val: 0.7
+  signal_scaler:
+    min_val: 0.05
+    max_val: 0.5
+
 
 training:
   batch_size: 16 
-  optimizer: 'adam' # adam, sgd
+  optimizer: 'adam' # adam
   learning_rate: 1e-3
   loss_func: 'mae' # mae, mse
   epochs: 100
@@ -20,6 +41,6 @@ training:
 
 model:
   inp_size: 40
-  num_layers: 3
-  hidden_size: 128
+  num_layers: 4
+  hidden_size: 300
   is_causal: false
