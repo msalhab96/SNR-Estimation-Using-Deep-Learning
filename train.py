@@ -10,7 +10,7 @@ from torch.optim import Optimizer
 import torch.distributed as dist
 from torch.nn import Module
 from functools import wraps
-from hprams import hprams
+from hprams import get_melkwargs, get_snr_params, hprams
 from utils import SNR, MinMax
 from model import Model
 from tqdm import tqdm
@@ -301,31 +301,6 @@ class DistTrainer(BaseTrainer):
             self.history[self._train_loss_key].append(total_loss)
         else:
             self.history[self._train_loss_key] = [total_loss]
-
-
-def load_model(*args, **kwargs) -> Module:
-    model = Model(**hprams.model)
-    if hprams.checkpoint is not None:
-        model.load_state_dict(torch.load(hprams.checkpoint))
-    return model
-
-
-def get_melkwargs() -> dict:
-    return {
-        'n_fft': hprams.data.n_fft,
-        'win_length': hprams.data.win_length,
-        'hop_length': hprams.data.hop_length
-    }
-
-
-def get_snr_params() -> dict:
-    return {
-        'sample_rate': hprams.data.sampling_rate,
-        'win_length': hprams.data.win_length,
-        'hop_length': hprams.data.hop_length,
-        'min_snr': hprams.data.min_snr,
-        'max_snr': hprams.data.max_snr
-    }
 
 
 def get_scalers() -> dict:
