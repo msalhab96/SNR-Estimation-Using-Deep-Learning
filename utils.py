@@ -4,6 +4,8 @@ from torch import Tensor
 from dataclasses import dataclass
 from torchaudio.transforms import Spectrogram
 from model import Model
+import random
+
 
 def power_to_db_scale(x: Tensor) -> Tensor:
     """Converts the given input power Tensor from the
@@ -90,3 +92,34 @@ def load_model(model_params: dict, checkpoint_path=None) -> Module:
     if checkpoint_path is not None:
         model.load_state_dict(torch.load(checkpoint_path))
     return model
+
+
+def join(signal: Tensor, noise: Tensor, epsilon=1e-3, seed=None) -> Tensor:
+    """Joins the given speech signal with the given noise signal
+
+    Args:
+        signal (Tensor): The speech signal to be added to the noise signal
+        noise (Tensor): The noise signal to be added to the speech signal
+        epsilon (_type_, optional): Normalization constant. Defaults to 1e-3.
+
+    Returns:
+        Tuple[Tensor, Tensor]: The Merged Signal and  the new noise signal
+    """
+    if seed is not None:
+        random.seed(seed)
+    noise_signal = torch.zeros_like(signal)
+    noise_length = noise.shape[1]
+    signal_length = signal.shape[1]
+    if noise_length == signal_length:
+        return (signal + noise), noise
+    elif noise_length < signal_length:
+        diff = signal_length - noise_length
+        start_idx = random.randrange(0, diff)
+        noise_signal += epsilon
+        noise_signal[:, start_idx: start_idx + noise_length] += noise
+        return (signal + noise_signal), noise_signal
+    else:
+        diff = noise_length - signal_length
+        start_idx = random.randrange(0, diff)
+        noise_signal = noise[:, start_idx: start_idx + signal_length]
+        return (signal + noise_signal), noise_signal

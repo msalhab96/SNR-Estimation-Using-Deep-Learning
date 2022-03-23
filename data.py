@@ -6,7 +6,7 @@ from torch import Tensor
 import torchaudio
 from torch.utils.data import Dataset, DataLoader
 from abc import ABC, abstractmethod
-from utils import MinMax
+from utils import MinMax, join
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data.distributed import DistributedSampler
 
@@ -111,26 +111,6 @@ class dataset(Dataset):
             )
         return signal[:, first_index: min(length, first_index + offset)]
 
-    def pick_noisy_chunk(
-            self, signal: Tensor, noise: Tensor, epsilon=1e-3
-            ) -> Tuple[Tensor, Tensor]:
-        noise_signal = torch.zeros_like(signal)
-        noise_length = noise.shape[1]
-        signal_length = signal.shape[1]
-        if noise_length == signal_length:
-            return (signal + noise), noise
-        elif noise_length < signal_length:
-            diff = signal_length - noise_length
-            start_idx = random.randrange(0, diff)
-            noise_signal += epsilon
-            noise_signal[:, start_idx: start_idx + noise_length] += noise
-            return (signal + noise_signal), noise_signal
-        else:
-            diff = noise_length - signal_length
-            start_idx = random.randrange(0, diff)
-            noise_signal = noise[:, start_idx: start_idx + signal_length]
-            return (signal + noise_signal), noise_signal
-
     def __getitem__(self, index):
         noise = self.get_noise()
         signal = self.get_signal(index)
@@ -138,7 +118,7 @@ class dataset(Dataset):
         signal = self.pick_signal_chunk(signal)
         noise *= noise_scaler
         signal *= signal_scaler
-        noisy_signal, noise = self.pick_noisy_chunk(signal, noise)
+        noisy_signal, noise = join(signal, noise, seed=self.seed)
         snr = self.snr_calc(signal, noise)
         result = self.noisy_pipeline.run(noisy_signal)
         length = result.shape[-1]
