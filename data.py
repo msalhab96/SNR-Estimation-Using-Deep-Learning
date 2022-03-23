@@ -112,7 +112,7 @@ class dataset(Dataset):
         return signal[:, first_index: min(length, first_index + offset)]
 
     def pick_noisy_chunk(
-            self, signal: Tensor, noise: Tensor
+            self, signal: Tensor, noise: Tensor, epsilon=1e-3
             ) -> Tuple[Tensor, Tensor]:
         noise_signal = torch.zeros_like(signal)
         noise_length = noise.shape[1]
@@ -122,7 +122,7 @@ class dataset(Dataset):
         elif noise_length < signal_length:
             diff = signal_length - noise_length
             start_idx = random.randrange(0, diff)
-            noise_signal += 1e-3
+            noise_signal += epsilon
             noise_signal[:, start_idx: start_idx + noise_length] += noise
             return (signal + noise_signal), noise_signal
         else:
@@ -151,6 +151,8 @@ class dataset(Dataset):
         if snr_len_diff != 0:
             zeros = torch.zeros(1, snr_len_diff)
             snr = torch.cat([snr, zeros], dim=-1)
+        if torch.isnan(snr).any():
+            return self.__getitem__(index)
         return result.squeeze(), snr.squeeze(), length
 
     def __len__(self):
