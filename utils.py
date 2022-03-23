@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from torchaudio.transforms import Spectrogram
 from model import Model
 import random
-
+from torch.nn import Module
 
 def power_to_db_scale(x: Tensor) -> Tensor:
     """Converts the given input power Tensor from the
@@ -87,10 +87,12 @@ class SNR:
         return self.clip_snr(snr)
 
 
-def load_model(model_params: dict, checkpoint_path=None) -> Module:
+def load_model(model_params: dict, checkpoint_path=None, device='cuda') -> Module:
     model = Model(**model_params)
     if checkpoint_path is not None:
-        model.load_state_dict(torch.load(checkpoint_path))
+        model.load_state_dict(
+            torch.load(checkpoint_path, map_location=torch.device(device))
+            )
     return model
 
 
