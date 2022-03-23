@@ -11,7 +11,7 @@ import torch.distributed as dist
 from torch.nn import Module
 from functools import wraps
 from hprams import get_melkwargs, get_snr_params, hprams
-from utils import SNR, MinMax
+from utils import SNR, MinMax, load_model
 from model import Model
 from tqdm import tqdm
 import torch
@@ -399,7 +399,7 @@ def get_train_test_dist_loaders(rank: int) -> Tuple[DataLoader, DataLoader]:
 def get_trainer() -> Trainer:
     device = hprams.device
     criterion = LOSS[hprams.training.loss_func]
-    model = Model(**hprams.model).to(device)
+    model = load_model(hprams.model, hprams.checkpoint)
     optimizer = OPT[hprams.training.optimizer](
         model.parameters(),
         lr=hprams.training.learning_rate
@@ -419,7 +419,7 @@ def get_trainer() -> Trainer:
 
 def get_distributed_trainer(rank: int):
     criterion = LOSS[hprams.training.loss_func]
-    model = Model(**hprams.model)
+    model = model = load_model(hprams.model, hprams.checkpoint)
     optimizer = OPT[hprams.training.optimizer](
         model.parameters(),
         lr=hprams.training.learning_rate
