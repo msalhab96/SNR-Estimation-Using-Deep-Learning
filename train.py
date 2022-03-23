@@ -101,7 +101,7 @@ class BaseTrainer(ITrainer):
         """
         result = ''
         for key, value in self.history.items():
-            self.tb.add_scalar(key, value[-1], epoch)
+            self.tensorboard.add_scalar(key, value[-1], epoch)
             result += f'{key}: {str(value[-1])}, '
         print(result[:-2])
 
