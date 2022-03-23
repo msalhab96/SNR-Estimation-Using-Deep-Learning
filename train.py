@@ -27,26 +27,30 @@ LOSS = {
 }
 
 
-def export_checkpoint(obj, *args, _counter=[0]) -> str:
-    _counter[0] += 1
-    if not os.path.exists(hprams.training.checkpoints_dir):
-        os.mkdir(hprams.training.checkpoints_dir)
-    model_path = os.path.join(
-        hprams.training.checkpoints_dir,
-        'checkpoint_' + str(_counter[0]) + '.pt'
-        )
-    torch.save(obj.model.state_dict(), model_path)
-    print(f'checkpoint saved to {model_path}')
-    return model_path
 
-
-def save_checkpoint(func, *args) -> Callable:
+def save_checkpoint(func, *args, _counter=[0]) -> Callable:
     """Save a checkpoint after each iteration
     """
     @wraps(func)
     def wrapper(obj, *args, **kwargs):
+        _counter[0] += 1
         result = func(obj, *args, **kwargs)
-        _ = export_checkpoint(obj)
+        if not os.path.exists(hprams.training.checkpoints_dir):
+            os.mkdir(hprams.training.checkpoints_dir)
+        if hprams.dist_configs.use_dist:
+            if obj.rank != 0:
+                return result
+        model_path = os.path.join(
+            hprams.training.checkpoints_dir,
+            'checkpoint_' + str(_counter[0]) + '.pt'
+            )
+        state_dict = obj.model.state_dict()
+        state_dict = {
+            key.replace('module.', ''): value 
+                for key, value in state_dict.items()
+                }
+        torch.save(state_dict, model_path)
+        print(f'checkpoint saved to {model_path}')
         return result
     return wrapper
 
@@ -265,6 +269,7 @@ class DistTrainer(BaseTrainer):
         else:
             self.history[self._test_loss_key] = [total_loss]
 
+    @save_checkpoint
     def train(self):
         """Iterates over the whole training data and train the models
         for a single epoch
@@ -296,8 +301,6 @@ class DistTrainer(BaseTrainer):
             self.history[self._train_loss_key].append(total_loss)
         else:
             self.history[self._train_loss_key] = [total_loss]
-        if self.rank == 0:
-            _ = export_checkpoint(self)
 
 
 def load_model(*args, **kwargs) -> Module:
